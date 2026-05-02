@@ -26,7 +26,7 @@ def custom_model_trainer(
         from pathlib import Path
 
     except:
-        %pip install matplotlib, torch, torchvision, sklearn, scikit-learn, tqdm, Path
+        print(f"Some of the required modules are not installed:\n\nmatplotlib, torch, torchvision, sklearn, scikit-learn, tqdm, Path")
 
     num_clases = len(classes)
 
@@ -63,23 +63,30 @@ def custom_model_trainer(
     print("Starting to train the model...")
 
     for epoch in range(1, epochs+1):
+        model.train()
+        
         for batch, (X, y) in enumerate(tqdm(train_dataloader)):
-            model.train()
 
-            y_pred = model(X)
+            try:
+                y_pred = model(X)
 
-            loss = loss_fn(y_pred, y)
+                loss = loss_fn(y_pred, y)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            if batch % 10 == 0:
-                print(f"Epoch: [{epoch}/{epochs}] Loss: {loss.item():.5f}")
+                if batch % 10 == 0:
+                    print(f"Epoch: [{epoch}/{epochs}] Loss: {loss.item():.5f}")
 
-            if batch % 300 == 0:
+                if batch % 300 == 0:
+                    torch.save(model.state_dict(), f"{model_save_name}")
+                    print(f"Saving Progress to ({model_save_name})...")
+
+            except KeyboardInterrupt:
                 torch.save(model.state_dict(), f"{model_save_name}")
-                print(f"Saving Progress to ({model_save_name})...")
+                print(f"Keyboard Interrupt... Saving progress to model ({model_save_name})")
+                return model
 
         if epoch == epochs:
             torch.save(model.state_dict(), f"{model_save_name}")
@@ -101,9 +108,9 @@ def custom_model_trainer(
 
     acc = accuracy_score(all_labels, all_preds)
 
-    accuracy = f"{acc * 100:.2f}%"
+    print(f"{acc * 100:.2f}%")
 
-    return model, accuracy
+    return model
 
 def pretrained_model_trainer(
         train_dir,
@@ -131,8 +138,8 @@ def pretrained_model_trainer(
         from tqdm.auto import tqdm
         from pathlib import Path
 
-    except:
-        %pip install matplotlib, torch, torchvision, sklearn, scikit-learn, tqdm, Path
+    except ModuleNotFoundError:
+        print(f"Some of the required modules are not installed:\n\nmatplotlib, torch, torchvision, sklearn, scikit-learn, tqdm, Path")
 
     num_classes = len(classes)
 
@@ -191,21 +198,16 @@ def pretrained_model_trainer(
     optimizer = torch.optim.Adam(params=model.parameters(),
                                  lr=lr)
 
-    train_transform = models.get_model_weights(f"{model_name}").DEFAULT.transforms()
-
-    test_transform = transforms.Compose([
-        transforms.Resize(img_size),
-        transforms.ToTensor()
-    ])
+    transform = models.get_model_weights(f"{model_name}").DEFAULT.transforms()
 
     train_dataset = datasets.ImageFolder(
         root=train_dir,
-        transform=train_transform,
+        transform=transform,
     )
 
     test_dataset = datasets.ImageFolder(
         root=test_dir,
-        transform=test_transform
+        transform=transform
     )
 
     train_dataloader = DataLoader(
@@ -221,23 +223,30 @@ def pretrained_model_trainer(
     print("Starting to train the model...")
 
     for epoch in range(1, epochs+1):
+        model.train()
+
         for batch, (X, y) in enumerate(tqdm(train_dataloader)):
-            model.train()
 
-            y_pred = model(X)
+            try:
+                y_pred = model(X)
 
-            loss = loss_fn(y_pred, y)
+                loss = loss_fn(y_pred, y)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            if batch % 10 == 0:
-                print(f"Epoch: [{epoch}/{epochs}] Loss: {loss.item():.5f}")
+                if batch % 10 == 0:
+                    print(f"Epoch: [{epoch}/{epochs}] Loss: {loss.item():.5f}")
 
-            if batch % 300 == 0:
+                if batch % 300 == 0:
+                    torch.save(model.state_dict(), f"{model_save_name}")
+                    print(f"Saving Progress to ({model_save_name})...")
+
+            except KeyboardInterrupt:
                 torch.save(model.state_dict(), f"{model_save_name}")
-                print(f"Saving Progress to ({model_save_name})...")
+                print(f"Keyboard Interrupt... Saving progress to model ({model_save_name})")
+                return model
 
         if epoch == epochs:
             torch.save(model.state_dict(), f"{model_save_name}")
@@ -260,6 +269,6 @@ def pretrained_model_trainer(
 
     acc = accuracy_score(all_labels, all_preds)
 
-    accuracy = f"{acc * 100:.2f}%"
+    print(f"{acc * 100:.2f}%")
 
-    return model, accuracy
+    return model
